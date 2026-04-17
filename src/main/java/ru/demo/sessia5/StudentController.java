@@ -21,17 +21,14 @@ public class StudentController implements Initializable {
 
     @FXML public TableColumn<Student, String> numberpp;
     @FXML public TableColumn<Student, String> specialtyNumber;
-    @FXML public TableColumn<Student, String> lastName;
-    @FXML public TableColumn<Student, String> firstName;
-    @FXML public TableColumn<Student, String> middleName;
+    @FXML public TableColumn<Student, String> fullName;
     @FXML public TableColumn<Student, String> faculty;
     @FXML public TableView<Student> tableView;
-    @FXML private TextField searchFioField;
+    @FXML private TextField searchFullNameField;
     @FXML private ComboBox<String> facultyFilterComboBox;
     @FXML private ComboBox<String> sortComboBox;
 
     private StudentDao studentDao = new StudentDao();
-    private ObservableList<String> facultyList = FXCollections.observableArrayList();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -44,22 +41,21 @@ public class StudentController implements Initializable {
 
     private void setCellTable() {
         numberpp.setCellValueFactory(new PropertyValueFactory<>("id"));
-        specialtyNumber.setCellValueFactory(new PropertyValueFactory<>("specialtyNumber"));
-        lastName.setCellValueFactory(new PropertyValueFactory<>("lastName"));
-        firstName.setCellValueFactory(new PropertyValueFactory<>("firstName"));
-        middleName.setCellValueFactory(new PropertyValueFactory<>("middleName"));
+        fullName.setCellValueFactory(new PropertyValueFactory<>("fullName"));
         faculty.setCellValueFactory(new PropertyValueFactory<>("faculty"));
+        specialtyNumber.setCellValueFactory(new PropertyValueFactory<>("specialtyNumber"));
     }
 
     private void initFacultyComboBox() {
         facultyFilterComboBox.getItems().add("Все факультеты");
-        List<Student> allStudents = studentDao.findAll();
-        facultyList.addAll(allStudents.stream()
+        // Загрузка уникальных факультетов из БД
+        List<Student> all = studentDao.findAll();
+        List<String> uniqueFaculties = all.stream()
                 .map(Student::getFaculty)
                 .distinct()
                 .sorted()
-                .collect(Collectors.toList()));
-        facultyFilterComboBox.getItems().addAll(facultyList);
+                .collect(Collectors.toList());
+        facultyFilterComboBox.getItems().addAll(uniqueFaculties);
         facultyFilterComboBox.setValue("Все факультеты");
     }
 
@@ -69,7 +65,7 @@ public class StudentController implements Initializable {
     }
 
     private void setupListeners() {
-        searchFioField.textProperty().addListener((obs, old, val) -> filterData());
+        searchFullNameField.textProperty().addListener((obs, old, val) -> filterData());
         facultyFilterComboBox.valueProperty().addListener((obs, old, val) -> filterData());
         sortComboBox.valueProperty().addListener((obs, old, val) -> filterData());
     }
@@ -77,21 +73,23 @@ public class StudentController implements Initializable {
     private void filterData() {
         List<Student> students = studentDao.findAll();
 
-        String searchText = searchFioField.getText();
+        // Поиск по ФИО
+        String searchText = searchFullNameField.getText();
         if (searchText != null && !searchText.isEmpty()) {
             students = students.stream()
-                    .filter(s -> s.getFullName() != null &&
-                            s.getFullName().toLowerCase().contains(searchText.toLowerCase()))
+                    .filter(s -> s.getFullName() != null && s.getFullName().toLowerCase().contains(searchText.toLowerCase()))
                     .collect(Collectors.toList());
         }
 
+        // Фильтрация по факультету
         String selectedFaculty = facultyFilterComboBox.getValue();
         if (selectedFaculty != null && !selectedFaculty.equals("Все факультеты")) {
             students = students.stream()
-                    .filter(s -> s.getFaculty() != null && s.getFaculty().equals(selectedFaculty))
+                    .filter(s -> s.getFaculty().equals(selectedFaculty))
                     .collect(Collectors.toList());
         }
 
+        // Сортировка по номеру специальности
         String sortValue = sortComboBox.getValue();
         if (sortValue != null) {
             if (sortValue.equals("По возрастанию")) {
@@ -105,29 +103,10 @@ public class StudentController implements Initializable {
         tableView.getItems().addAll(students);
     }
 
-    private void refreshFacultyList() {
-        List<Student> allStudents = studentDao.findAll();
-        facultyList.clear();
-        facultyList.addAll(allStudents.stream()
-                .map(Student::getFaculty)
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList()));
-        String currentValue = facultyFilterComboBox.getValue();
-        facultyFilterComboBox.getItems().clear();
-        facultyFilterComboBox.getItems().add("Все факультеты");
-        facultyFilterComboBox.getItems().addAll(facultyList);
-        if (facultyList.contains(currentValue)) {
-            facultyFilterComboBox.setValue(currentValue);
-        } else {
-            facultyFilterComboBox.setValue("Все факультеты");
-        }
-    }
-
     @FXML
     public void onAddClick(ActionEvent event) {
         showAddDialog();
-        refreshFacultyList();
+        refreshFacultyComboBox();
         filterData();
     }
 
@@ -147,7 +126,7 @@ public class StudentController implements Initializable {
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             studentDao.delete(selected);
-            refreshFacultyList();
+            refreshFacultyComboBox();
             filterData();
             showAlert("Успех", "Запись успешно удалена", Alert.AlertType.INFORMATION);
         }
@@ -161,8 +140,26 @@ public class StudentController implements Initializable {
             return;
         }
         showEditDialog(selected);
-        refreshFacultyList();
+        refreshFacultyComboBox();
         filterData();
+    }
+
+    private void refreshFacultyComboBox() {
+        List<Student> all = studentDao.findAll();
+        List<String> uniqueFaculties = all.stream()
+                .map(Student::getFaculty)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        String currentValue = facultyFilterComboBox.getValue();
+        facultyFilterComboBox.getItems().clear();
+        facultyFilterComboBox.getItems().add("Все факультеты");
+        facultyFilterComboBox.getItems().addAll(uniqueFaculties);
+        if (uniqueFaculties.contains(currentValue)) {
+            facultyFilterComboBox.setValue(currentValue);
+        } else {
+            facultyFilterComboBox.setValue("Все факультеты");
+        }
     }
 
     private void showAddDialog() {
@@ -170,33 +167,23 @@ public class StudentController implements Initializable {
         dialog.setTitle("Добавление студента");
         dialog.setHeaderText("Введите данные студента");
 
-        TextField lastNameField = new TextField();
-        lastNameField.setPromptText("Фамилия");
-        TextField firstNameField = new TextField();
-        firstNameField.setPromptText("Имя");
-        TextField middleNameField = new TextField();
-        middleNameField.setPromptText("Отчество");
-        ComboBox<String> facultyCombo = new ComboBox<>();
-        facultyCombo.setPromptText("Факультет");
-        facultyCombo.setEditable(true);
-        facultyCombo.getItems().addAll(facultyList);
+        TextField fullNameField = new TextField();
+        fullNameField.setPromptText("Фамилия Имя Отчество");
+        TextField facultyField = new TextField();
+        facultyField.setPromptText("Факультет");
         TextField specialtyNumberField = new TextField();
-        specialtyNumberField.setPromptText("Номер специальности");
+        specialtyNumberField.setPromptText("Номер специальности (1-500000)");
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new javafx.geometry.Insets(20));
-        grid.add(new Label("Фамилия:"), 0, 0);
-        grid.add(lastNameField, 1, 0);
-        grid.add(new Label("Имя:"), 0, 1);
-        grid.add(firstNameField, 1, 1);
-        grid.add(new Label("Отчество:"), 0, 2);
-        grid.add(middleNameField, 1, 2);
-        grid.add(new Label("Факультет:"), 0, 3);
-        grid.add(facultyCombo, 1, 3);
-        grid.add(new Label("Номер специальности:"), 0, 4);
-        grid.add(specialtyNumberField, 1, 4);
+        grid.add(new Label("ФИО:"), 0, 0);
+        grid.add(fullNameField, 1, 0);
+        grid.add(new Label("Факультет:"), 0, 1);
+        grid.add(facultyField, 1, 1);
+        grid.add(new Label("Номер специальности:"), 0, 2);
+        grid.add(specialtyNumberField, 1, 2);
 
         dialog.getDialogPane().setContent(grid);
 
@@ -206,18 +193,12 @@ public class StudentController implements Initializable {
         dialog.setResultConverter(button -> {
             if (button == saveBtn) {
                 try {
-                    int specialtyNumber = Integer.parseInt(specialtyNumberField.getText());
-                    if (specialtyNumber < 1 || specialtyNumber > 500000) {
+                    int specNumber = Integer.parseInt(specialtyNumberField.getText());
+                    if (specNumber < 1 || specNumber > 500000) {
                         showAlert("Ошибка", "Номер специальности должен быть в диапазоне 1-500000", Alert.AlertType.ERROR);
                         return null;
                     }
-                    String faculty = facultyCombo.getValue();
-                    if (faculty == null || faculty.trim().isEmpty()) {
-                        showAlert("Ошибка", "Введите факультет", Alert.AlertType.ERROR);
-                        return null;
-                    }
-                    return new Student(faculty, specialtyNumber, lastNameField.getText(),
-                            firstNameField.getText(), middleNameField.getText());
+                    return new Student(fullNameField.getText(), facultyField.getText(), specNumber);
                 } catch (NumberFormatException e) {
                     showAlert("Ошибка", "Номер специальности должен быть числом", Alert.AlertType.ERROR);
                     return null;
@@ -237,29 +218,20 @@ public class StudentController implements Initializable {
         dialog.setTitle("Редактирование студента");
         dialog.setHeaderText("Измените данные студента");
 
-        TextField lastNameField = new TextField(student.getLastName());
-        TextField firstNameField = new TextField(student.getFirstName());
-        TextField middleNameField = new TextField(student.getMiddleName());
-        ComboBox<String> facultyCombo = new ComboBox<>();
-        facultyCombo.setEditable(true);
-        facultyCombo.getItems().addAll(facultyList);
-        facultyCombo.setValue(student.getFaculty());
+        TextField fullNameField = new TextField(student.getFullName());
+        TextField facultyField = new TextField(student.getFaculty());
         TextField specialtyNumberField = new TextField(String.valueOf(student.getSpecialtyNumber()));
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new javafx.geometry.Insets(20));
-        grid.add(new Label("Фамилия:"), 0, 0);
-        grid.add(lastNameField, 1, 0);
-        grid.add(new Label("Имя:"), 0, 1);
-        grid.add(firstNameField, 1, 1);
-        grid.add(new Label("Отчество:"), 0, 2);
-        grid.add(middleNameField, 1, 2);
-        grid.add(new Label("Факультет:"), 0, 3);
-        grid.add(facultyCombo, 1, 3);
-        grid.add(new Label("Номер специальности:"), 0, 4);
-        grid.add(specialtyNumberField, 1, 4);
+        grid.add(new Label("ФИО:"), 0, 0);
+        grid.add(fullNameField, 1, 0);
+        grid.add(new Label("Факультет:"), 0, 1);
+        grid.add(facultyField, 1, 1);
+        grid.add(new Label("Номер специальности:"), 0, 2);
+        grid.add(specialtyNumberField, 1, 2);
 
         dialog.getDialogPane().setContent(grid);
 
@@ -269,21 +241,14 @@ public class StudentController implements Initializable {
         dialog.setResultConverter(button -> {
             if (button == saveBtn) {
                 try {
-                    int specialtyNumber = Integer.parseInt(specialtyNumberField.getText());
-                    if (specialtyNumber < 1 || specialtyNumber > 500000) {
+                    int specNumber = Integer.parseInt(specialtyNumberField.getText());
+                    if (specNumber < 1 || specNumber > 500000) {
                         showAlert("Ошибка", "Номер специальности должен быть в диапазоне 1-500000", Alert.AlertType.ERROR);
                         return null;
                     }
-                    String faculty = facultyCombo.getValue();
-                    if (faculty == null || faculty.trim().isEmpty()) {
-                        showAlert("Ошибка", "Введите факультет", Alert.AlertType.ERROR);
-                        return null;
-                    }
-                    student.setLastName(lastNameField.getText());
-                    student.setFirstName(firstNameField.getText());
-                    student.setMiddleName(middleNameField.getText());
-                    student.setFaculty(faculty);
-                    student.setSpecialtyNumber(specialtyNumber);
+                    student.setFullName(fullNameField.getText());
+                    student.setFaculty(facultyField.getText());
+                    student.setSpecialtyNumber(specNumber);
                     return student;
                 } catch (NumberFormatException e) {
                     showAlert("Ошибка", "Номер специальности должен быть числом", Alert.AlertType.ERROR);

@@ -13,55 +13,32 @@ public class Student implements Serializable {
     @Column(name = "id")
     private int numberpp;
 
+    @Column(name = "full_name", length = 100)
+    private String fullName;
+
     @Column(name = "faculty", length = 20)
     private String faculty;
 
     @Column(name = "specialty_number")
     private int specialtyNumber;
 
-    @Column(name = "last_name", length = 20)
-    private String lastName;
-
-    @Column(name = "first_name", length = 20)
-    private String firstName;
-
-    @Column(name = "middle_name", length = 20)
-    private String middleName;
-
     public Student() {}
 
-    public Student(String faculty, int specialtyNumber, String lastName, String firstName, String middleName) {
+    public Student(String fullName, String faculty, int specialtyNumber) {
+        this.fullName = fullName;
         this.faculty = faculty;
         this.specialtyNumber = specialtyNumber;
-        this.lastName = lastName;
-        this.firstName = firstName;
-        this.middleName = middleName;
     }
 
     public String getId() { return String.valueOf(numberpp); }
     public void setId(int id) { this.numberpp = id; }
+
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
 
     public String getFaculty() { return faculty; }
     public void setFaculty(String faculty) { this.faculty = faculty; }
 
     public int getSpecialtyNumber() { return specialtyNumber; }
     public void setSpecialtyNumber(int specialtyNumber) { this.specialtyNumber = specialtyNumber; }
-
-    public String getLastName() { return lastName; }
-    public void setLastName(String lastName) { this.lastName = lastName; }
-
-    public String getFirstName() { return firstName; }
-    public void setFirstName(String firstName) { this.firstName = firstName; }
-
-    public String getMiddleName() { return middleName; }
-    public void setMiddleName(String middleName) { this.middleName = middleName; }
-
-    public String getFullName() {
-        StringBuilder fullName = new StringBuilder();
-        fullName.append(lastName).append(" ").append(firstName);
-        if (middleName != null && !middleName.trim().isEmpty()) {
-            fullName.append(" ").append(middleName);
-        }
-        return fullName.toString();
-    }
 }
