@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.demo.sessia5.StudentController">
+    <children>
+        <BorderPane layoutX="72.0" layoutY="55.0" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <top>
+                <FlowPane BorderPane.alignment="CENTER">
+                    <children>
+                        <TextField fx:id="searchFioField" layoutX="10.0" layoutY="10.0" prefHeight="25.0" prefWidth="214.0" promptText="Поиск по ФИО">
+                            <FlowPane.margin>
+                                <Insets left="10.0" />
+                            </FlowPane.margin>
+                        </TextField>
+                        <Label text="Факультет">
+                            <FlowPane.margin>
+                                <Insets left="10.0" />
+                            </FlowPane.margin>
+                        </Label>
+                        <ComboBox fx:id="facultyFilterComboBox" prefWidth="150.0" />
+                        <ComboBox fx:id="sortComboBox" prefHeight="25.0" prefWidth="193.0" promptText="сортировать по номеру специальности" />
+                    </children>
+                </FlowPane>
+            </top>
+            <center>
+                <TableView fx:id="tableView" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                    <columns>
+                        <TableColumn fx:id="numberpp" prefWidth="138.0" text="Номер п.п" />
+                        <TableColumn fx:id="specialtyNumber" prefWidth="185.0" text="Номер специальности" />
+                        <TableColumn fx:id="lastName" prefWidth="106.0" text="Фамилия" />
+                        <TableColumn fx:id="firstName" prefWidth="87.0" text="Имя" />
+                        <TableColumn fx:id="middleName" prefWidth="125.0" text="Отчество" />
+                        <TableColumn fx:id="faculty" minWidth="0.0" prefWidth="130.0" text="Факультет" />
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                </TableView>
+            </center>
+            <bottom>
+                <ToolBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                    <items>
+                        <Button mnemonicParsing="false" onAction="#onAddClick" text="Добавить" />
+                        <Button layoutX="10.0" layoutY="13.0" mnemonicParsing="false" onAction="#onRemoveClick" text="Удалить" />
+                        <Button layoutX="83.0" layoutY="13.0" mnemonicParsing="false" onAction="#onUpdateClick" text="Изменить" />
+                    </items>
+                </ToolBar>
+            </bottom>
+        </BorderPane>
+    </children>
+</AnchorPane>
