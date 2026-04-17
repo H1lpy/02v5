@@ -11,3 +11,11 @@
     </session-factory>
 </hibernate-configuration>
 
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    faculty VARCHAR(20) NOT NULL,
+    specialty_number INT NOT NULL CHECK (specialty_number BETWEEN 1 AND 500000),
+    last_name VARCHAR(20) NOT NULL,
+    first_name VARCHAR(20) NOT NULL,
+    middle_name VARCHAR(20)
+);
